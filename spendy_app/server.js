@@ -1,15 +1,18 @@
 const express = require("express");
-const sqlite3 = require("sqlite3").verbose();
-const path = require("path");
 const db_func = require("./db_functions");
+const bodyParser = require('body-parser');
+const path = require('path');
+
 const app = express();
 
-// New route to get data from the DB
-app.get("/", async (req, res) => {
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(bodyParser.json());
+
+app.get('/api/db/get_tables', async (req, res) => {
   t_db = db_func.db_open();
   try {
     const [headers, data] = await Promise.all([
-      db_func.db_get_columns(100, t_db), // ✅ Use from db_func
+      db_func.db_get_columns(100, t_db),
       db_func.db_get_data(100, t_db)
     ]);
 
@@ -18,7 +21,7 @@ app.get("/", async (req, res) => {
       spendings: data
     };
 
-    res.json(spendy_table); // ✅ Send result to client
+    res.json(spendy_table);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Database error' });
@@ -27,7 +30,7 @@ app.get("/", async (req, res) => {
   }
 });
 
-app.post('/bills', express.json(), (req, res) => {
+app.post('/api/db/save_column', express.json(), (req, res) => {
   t_db = db_func.db_open();
   db_func.db_save_bill(req.body, t_db)
     .then(result => res.json({ success: true, bill_id: result.id }))
@@ -40,8 +43,7 @@ app.post('/bills', express.json(), (req, res) => {
     });
 });
 
-// TESTING GROUNDS
-app.post('/spending', express.json(), (req, res) => {
+app.post('/api/db/save_bill_row', express.json(), (req, res) => {
   t_db = db_func.db_open();
   db_func.db_save_data_row(req.body, t_db)
     .then(result => res.json({ success: true, bill_id: result.id }))
@@ -54,7 +56,7 @@ app.post('/spending', express.json(), (req, res) => {
     });
 });
 
-app.delete('/spending/:id', async (req, res) => {
+app.delete('/api/db/delete_bill_row/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const result = await db_func.db_delete_data_row(id);
@@ -70,7 +72,7 @@ app.delete('/spending/:id', async (req, res) => {
   }
 });
 
-app.delete('/bills/:id', async (req, res) => {
+app.delete('/api/db/delete_bill_col/bills/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const result = await db_func.db_delete_bill(id);

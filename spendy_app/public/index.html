@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Three Boxes Layout</title>
+    <link rel="stylesheet" href="spendy.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="top">My Website Title</div>
+      <div class="sidebar">
+        <h3>Sidebar</h3>
+        <a href="#">Link 1</a>
+        <a href="#">Link 2</a>
+        <a href="#">Link 3</a>
+      </div>
+      <div class="main">
+        <!-- Section 1: H1 Title -->
+        <div class="section" id="title-section">
+          <h1>2025</h1>
+        </div>
+
+        <!-- Section 2: Table -->
+        <div class="section" id="table-section">
+        </div>
+
+        <!-- Section 3: Form -->
+        <div class="section" id="form-section">
+          <h2>Add a Bill</h2>
+          <form id="bill-form">
+            <input type="text" id="bill_id" placeholder="Bill ID" required />
+            <input type="number" id="year" placeholder="Year" required />
+            <input type="number" id="month" placeholder="Month" required />
+            <input
+              type="number"
+              id="amount"
+              placeholder="Amount"
+              step="0.01"
+              required
+            />
+            <button type="submit">Save Bill</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="spendy.js"></script>
+  </body>
+</html>

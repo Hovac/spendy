@@ -1,0 +1,84 @@
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body, html {
+    height: 100%;
+    font-family: Arial, sans-serif;
+  }
+
+  /* Layout container */
+  .container {
+    display: grid;
+    grid-template-areas: 
+      "top top"
+      "sidebar main";
+    grid-template-columns: 200px 1fr; 
+    grid-template-rows: 60px 1fr; 
+    height: 100vh;
+  }
+
+  .top {
+    grid-area: top;
+    background-color: #4CAF50;
+    color: white;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    font-size: 1.5em;
+  }
+
+  .sidebar {
+    grid-area: sidebar;
+    background-color: #f4f4f4;
+    padding: 20px;
+    border-right: 1px solid #ddd;
+  }
+
+  .sidebar a {
+    display: block;
+    margin-bottom: 10px;
+    color: #333;
+    text-decoration: none;
+  }
+
+  .sidebar a:hover {
+    text-decoration: underline;
+  }
+
+  .main {
+    grid-area: main;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  /* Main content sections spacing */
+  .section {
+    margin-bottom: 30px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  table, th, td {
+    border: 1px solid #ccc;
+  }
+
+  th, td {
+    padding: 8px;
+    text-align: center;
+  }
+
+  input, button {
+    padding: 8px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+  }
+
+  button {
+    cursor: pointer;
+  }
