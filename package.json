@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "express": "^5.1.0",
+    "handsontable": "^16.0.1",
     "path": "^0.12.7",
     "sqlite3": "^5.1.7"
   }

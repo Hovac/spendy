@@ -3,7 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Three Boxes Layout</title>
+    <title>Spendy</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/handsontable/styles/handsontable.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/handsontable/styles/ht-theme-main.min.css"
+    />
     <link rel="stylesheet" href="spendy.css" />
   </head>
   <body>
@@ -16,35 +24,15 @@
         <a href="#">Link 3</a>
       </div>
       <div class="main">
-        <!-- Section 1: H1 Title -->
-        <div class="section" id="title-section">
-          <h1>2025</h1>
-        </div>
+        <div class="section" id="table-section"></div>
 
-        <!-- Section 2: Table -->
-        <div class="section" id="table-section">
-        </div>
-
-        <!-- Section 3: Form -->
-        <div class="section" id="form-section">
-          <h2>Add a Bill</h2>
-          <form id="bill-form">
-            <input type="text" id="bill_id" placeholder="Bill ID" required />
-            <input type="number" id="year" placeholder="Year" required />
-            <input type="number" id="month" placeholder="Month" required />
-            <input
-              type="number"
-              id="amount"
-              placeholder="Amount"
-              step="0.01"
-              required
-            />
-            <button type="submit">Save Bill</button>
-          </form>
-        </div>
       </div>
     </div>
 
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"
+    ></script>
     <script src="spendy.js"></script>
   </body>
 </html>
