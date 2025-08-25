@@ -1,91 +1,79 @@
 const express = require("express");
 const db_func = require("./db_functions");
-const bodyParser = require('body-parser');
-const path = require('path');
+const bodyParser = require("body-parser");
+const path = require("path");
 
 const app = express();
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 app.use(bodyParser.json());
 
-app.get('/api/db/get_tables', async (req, res) => {
+/**
+ * check if database table is empty or not
+ */
+app.get("/is-empty", (req, res) => {
   t_db = db_func.db_open();
-  try {
-    const [headers, data] = await Promise.all([
-      db_func.db_get_columns(100, t_db),
-      db_func.db_get_data(100, t_db)
-    ]);
 
-    const spendy_table = {
-      bills: headers,
-      spendings: data
-    };
+  t_db.get("SELECT COUNT(*) AS count FROM spendy_bills", (err, row) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Database error" });
+    }
 
-    res.json(spendy_table);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Database error' });
-  } finally {
+    // If count == 0, table is empty
+    const isEmpty = row.count === 0;
+    res.json({ empty: isEmpty });
+
     db_func.db_close(t_db);
-  }
+  });
 });
 
-app.post('/api/db/save_column', express.json(), (req, res) => {
+/**
+ * save only a bill name with ID <1000
+ * this way user can have 1000 unique columns
+ * and we have speedier way to create columns
+ * instead of querying everything and searching
+ * for unique entries
+ */
+app.post("/save-bill", (req, res) => {
   t_db = db_func.db_open();
-  db_func.db_save_bill(req.body, t_db)
-    .then(result => res.json({ success: true, bill_id: result.id }))
-    .catch(err => {
-      console.error(err);
-      res.status(500).json({ error: 'Could not save bill' });
-    })
-    .finally(() => {
-      db_func.db_close(t_db);
-    });
-});
 
-app.post('/api/db/save_bill_row', express.json(), (req, res) => {
-  t_db = db_func.db_open();
-  db_func.db_save_data_row(req.body, t_db)
-    .then(result => res.json({ success: true, bill_id: result.id }))
-    .catch(err => {
-      console.error(err);
-      res.status(500).json({ error: 'Could not save bill' });
-    })
-    .finally(() => {
-      db_func.db_close(t_db);
-    });
-});
+  const { textField } = req.body;
 
-app.delete('/api/db/delete_bill_row/:id', async (req, res) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    const result = await db_func.db_delete_data_row(id);
-
-    if (result.changes === 0) {
-      res.status(404).json({ error: 'No row found with that ID' });
-    } else {
-      res.json({ success: true });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
+  if (!textField) {
+    return res.status(400).json({ error: "Missing parameters" });
   }
+
+  const sql = `INSERT INTO spendy_bills (bill_name) VALUES (?)`;
+  t_db.run(sql, [textField], function (err) {
+    if (err) {
+      console.error("Insert error:", err.message);
+      return res.status(500).json({ error: "Database error" });
+    }
+    res.json({ success: true, insertedId: this.lastID });
+    db_func.db_close(t_db);
+  });
 });
 
-app.delete('/api/db/delete_bill_col/bills/:id', async (req, res) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    const result = await db_func.db_delete_bill(id);
+/**
+ * only get bill names with ID less than 1000
+ * helps us speed up the table creation
+ */
+app.get("/get-columns", (req, res) => {
+  const t_db = db_func.db_open();
 
-    if (result.changes === 0) {
-      res.status(404).json({ error: 'No row found with that ID' });
-    } else {
-      res.json({ success: true });
+  const sql = `SELECT * FROM spendy_bills WHERE y_m_bill_id < ?`;
+
+  t_db.all(sql, [1000], (err, rows) => {
+    if (err) {
+      console.error("Query error:", err.message);
+      db_func.db_close(t_db);
+      return res.status(500).json({ error: "Database error" });
     }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
+
+    res.json({ success: true, data: rows });
+    db_func.db_close(t_db);
+  });
 });
 
 app.listen(3000, () => {

@@ -1,4 +1,3 @@
-var bill_col_map;
 const monthNames = [
   "January",
   "February",
@@ -16,141 +15,278 @@ const monthNames = [
 const current_year = new Date().getFullYear();
 const current_month = new Date().getMonth() + 1;
 
-function group_by_year(db_obj) {
-  // 1. Group by year
-  const grouped = Object.values(
-    db_obj.reduce((acc, curr) => {
-      if (!acc[curr.year]) {
-        acc[curr.year] = { year: curr.year, items: [] };
-      }
-      acc[curr.year].items.push({
-        month: curr.month,
-        bill_id: curr.bill_id,
-        amount: curr.amount,
-        id: curr.id,
-      });
-      return acc;
-    }, {})
-  );
+// function cell_modifier(cell_data) {
+//   let data = cell_data[0];
+//   let row = data[0];
+//   let col = data[1];
+//   let old_value = data[2];
+//   let new_value = data[3];
+//   console.log(data);
 
-  // 2. Sort years ascending
-  grouped.sort((a, b) => b.year - a.year);
-
-  // 3. Sort months and fill missing with ""
-  grouped.forEach((group) => {
-    // sort ascending
-    group.items.sort((a, b) => a.month - b.month);
-
-    // fill in months 1 → 12
-    const filled = [];
-    for (let m = 1; m <= 12; m++) {
-      const found = group.items.find((item) => item.month === m);
-      filled.push(found || { month: m, bill_id: "", amount: "", id: "" });
-    }
-    group.items = filled;
-  });
-
-  return grouped;
-}
-
-function create_title(title_year) {
-  const table_div = document.querySelector("#table-section");
-
-  const h1_el = document.createElement("h1");
-  h1_el.textContent = title_year;
-  h1_el.style.color = "#22648c";
-
-  table_div.appendChild(h1_el);
-}
+//   if (Number(new_value) === new_value) {
+//     if (
+//       (old_value == "" || old_value === undefined || old_value === null) &&
+//       new_value != ""
+//     ) {
+//       // write new value
+//       // table_write_new_value();
+//       console.log("new value");
+//     } else if (new_value != "" && new_value != old_value) {
+//       // change table value
+//       // table_change_value();
+//       console.log("change value");
+//     } else {
+//       console.log("do nothing");
+//       // do nothing
+//     }
+//   } else if (
+//     (new_value === null || new_value == "") &&
+//     old_value != "" &&
+//     old_value !== null
+//   ) {
+//     // delete the entry
+//     console.log("delete value");
+//   }
+// }
 
 function create_tables() {
+  hot.addHook("afterChange", (cell) => {
+    cell_modifier(cell);
+  });
+}
+
+async function table_has_data() {
+  const res = await fetch("/is-empty");
+  const data = await res.json();
+
+  let is_empty = !data.empty;
+
+  return is_empty;
+}
+
+/**
+ * create popup to signify the user that this is example table
+ */
+// Create the popup div once, outside the function
+popup = document.createElement("div");
+popup.id = "popup-message";
+popup.textContent = "Add new bills to \ntrack the spendings";
+document.body.appendChild(popup);
+let timeoutId = null;
+
+function example_popup() {
   const table_div = document.querySelector("#table-section");
-  let temp_data = [];
-  let temp_row = [];
 
-  for (let i = 11; i >= 0; i--) {
-    temp_row = [];
-    temp_row[0] = monthNames[i];
-    temp_row[1] = "";
-    temp_row[2] = "";
-    temp_data.push(temp_row);
-  }
-  console.log(temp_data);
+  table_div.addEventListener("click", (e) => {
+    const target = e.target;
 
+    // Only trigger on cell or header
+    if (
+      target.tagName === "TD" ||
+      target.closest(".ht_clone_top") ||
+      target.closest(".ht_clone_left")
+    ) {
+      // Clear previous timer
+      if (timeoutId) clearTimeout(timeoutId);
+
+      // Show popup
+      popup.style.display = "block";
+
+      // Position centered on clicked element
+      const rect = target.getBoundingClientRect();
+      const popupWidth = popup.offsetWidth;
+      const popupHeight = popup.offsetHeight;
+      popup.style.left =
+        rect.left + window.scrollX + rect.width / 2 - popupWidth / 2 + "px";
+      popup.style.top =
+        rect.top + window.scrollY + rect.height / 2 - popupHeight / 2 + "px";
+
+      // Auto-hide after 5 seconds
+      timeoutId = setTimeout(() => {
+        popup.style.display = "none";
+      }, 5000);
+    }
+  });
+
+  // Hide popup if clicking anywhere outside table
+  document.addEventListener("click", (e) => {
+    if (
+      e.target !== popup &&
+      !e.target.closest(".htCore") &&
+      !e.target.closest(".ht_clone_top") &&
+      !e.target.closest(".ht_clone_left")
+    ) {
+      popup.style.display = "none";
+      if (timeoutId) clearTimeout(timeoutId);
+    }
+  });
+}
+
+function create_table_example() {
+  const table_div = document.querySelector("#table-section");
+
+  // create year title
+  const heading = document.createElement("h1");
+  heading.textContent = current_year;
+  table_div.appendChild(heading);
+
+  // dummy data array for the example table
+  const data = Array.from({ length: monthNames.length }, () => {
+    return [
+      Math.random() < 0.3
+        ? null
+        : parseFloat((Math.random() * (150 - 0) + 0).toFixed(2)),
+      Math.random() < 0.3
+        ? null
+        : parseFloat((Math.random() * (150 - 0) + 0).toFixed(2)),
+      Math.random() < 0.7
+        ? null
+        : parseFloat((Math.random() * (150 - 0) + 0).toFixed(2)),
+    ];
+  });
+  // Append € to non-null values
+  const formattedData = data.map((row) =>
+    row.map((cell) => (cell !== null ? cell + " €" : null))
+  );
+  // create table
   const hot = new Handsontable(table_div, {
-    // theme name with obligatory ht-theme-* prefix
     themeName: "ht-theme-main-dark-auto",
-    // other options
-    data: temp_data,
-    colHeaders: ["Month", "HEP", "MEEEP"],
-    width: "auto",
+    data: formattedData,
+    colHeaders: ["electricity_example", "gas_example", "internet_example"],
+    rowHeaders: monthNames,
+    width: "100%",
     height: "auto",
     colWidths: 150,
-    stretchH: "none", // do not stretch columns
-    autoWrapRow: true,
-    autoWrapCol: true,
-    licenseKey: "non-commercial-and-evaluation", // for non-commercial use only
+    rowHeaderWidth: 120,
+    readOnly: true,
+    licenseKey: "non-commercial-and-evaluation",
   });
-  hot.addHook("afterChange", (cell) => {
-    let data = cell[0];
-    let row = data[0];
-    let col = data[1];
-    let old_value = data[2];
-    let new_value = data[3];
-    console.log(data);
-
-    if (Number(new_value) === new_value) {
-      if ((old_value == "" || old_value === undefined) && new_value != "") {
-        // table_write_new_value();
-        console.log("new value");
-      } else if (new_value != "" && new_value != old_value) {
-        // table_change_value();
-        console.log("change value");
-      } else {
-        // currently do nothing
-      }
-    }
-  });
+  hot.addHook("afterSelection", example_popup);
 }
 
-function populate_tables(t_bills, table_data) {
-  const table_div = document.querySelector("#table-section");
-
-  table_data.forEach((t_year) => {
-    create_title(t_year.year);
-    // create_table(t_bills, t_year.items);
-  });
-}
-
-async function loadBills() {
+async function save_bill_column(bill_name) {
   try {
-    const res = await fetch("/api/db/get_tables", { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP error ${res.status} ${res.statusText}`);
+    const response = await fetch("http://localhost:3000/save-bill", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        textField: bill_name,
+      }),
+    });
 
-    const spendy_data = await res.json().catch(() => null);
-    if (
-      !spendy_data ||
-      !Array.isArray(spendy_data.bills) ||
-      !Array.isArray(spendy_data.spendings)
-    ) {
-      throw new Error("Invalid data format");
-    }
-
-    /* map bill_id to a column - important to know where to write data and how to store data */
-    bill_col_map = spendy_data.bills.reduce((map, bill, index) => {
-      map[bill.id] = index + 1;
-      return map;
-    }, {});
-
-    const sorted_data = group_by_year(spendy_data.spendings);
-    populate_tables(spendy_data.bills, sorted_data);
-  } catch (err) {
-    console.error("Failed to load bills:", err);
-    document.getElementById(
-      "table-section"
-    ).innerHTML = `<p>Error loading bills: ${err.message}</p>`;
+    const data = await response.json();
+    console.log("Server response:", data);
+  } catch (error) {
+    console.error("Error sending data:", error);
   }
 }
 
-// Call after page load
-window.addEventListener("DOMContentLoaded", create_tables);
+function add_bill_button() {
+  const table_div = document.querySelector("#table-section");
+
+  // Create the Open Popup button
+  const button = document.createElement("button");
+  button.id = "show-popup-btn";
+  button.textContent = "Open Popup";
+  table_div.appendChild(button);
+
+  // Create overlay (hidden initially)
+  const overlay = document.createElement("div");
+  overlay.id = "popup-overlay";
+  document.body.appendChild(overlay);
+
+  // Create popup container (hidden initially)
+  const popup = document.createElement("div");
+  popup.id = "center-popup";
+
+  // Input field
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = "Enter text...";
+
+  // Submit button
+  const submitBtn = document.createElement("button");
+  submitBtn.textContent = "Submit";
+
+  // Close popup function with fade-out
+  function closePopup() {
+    popup.classList.remove("show");
+    overlay.classList.remove("show");
+    setTimeout(() => {
+      popup.remove();
+      overlay.remove();
+    }, 300); // wait for fade-out to finish
+  }
+
+  // Submit event
+  function submitForm() {
+    save_bill_column(input.value);
+    closePopup();
+  }
+
+  submitBtn.addEventListener("click", submitForm);
+
+  // Allow pressing Enter to submit
+  input.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault(); // prevent form submission if inside a form
+      submitForm();
+    }
+  });
+
+  // Append elements to popup
+  popup.appendChild(input);
+  popup.appendChild(submitBtn);
+
+  // Open popup on button click
+  button.addEventListener("click", () => {
+    document.body.appendChild(overlay);
+    document.body.appendChild(popup);
+
+    // Force reflow so CSS transition works
+    void overlay.offsetWidth;
+    void popup.offsetWidth;
+
+    // Show with fade-in
+    overlay.classList.add("show");
+    popup.classList.add("show");
+
+    // Autofocus input after popup becomes visible
+    setTimeout(() => input.focus(), 50);
+  });
+
+  // Close popup if overlay is clicked
+  overlay.addEventListener("click", closePopup);
+}
+
+async function create_table_from_db() {
+  const table_div = document.querySelector("#table-section");
+
+  try {
+    const response = await fetch("http://localhost:3000/get-columns");
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log("Retrieved data:", data.data);
+    return data;
+  } catch (err) {
+    console.error("Error fetching data:", err);
+  }
+}
+
+/*
+check if DB is empty and create new table
+if DB isn't empty, create table for each year and populate it
+*/
+async function fake_main() {
+  const db_has_data = await table_has_data();
+  add_bill_button();
+  if (db_has_data) {
+    create_table_from_db();
+  } else {
+    create_table_example();
+  }
+}
+
+fake_main();
