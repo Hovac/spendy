@@ -66,8 +66,6 @@ async function delete_bill_column(col_id) {
 
   let bill_name = await getBillName(billId);
 
-  console.log(bill_name);
-
   try {
     const response = await fetch("/delete-bill", {
       method: "POST",
@@ -97,15 +95,17 @@ function closePopup(popup, overlay) {
 }
 
 function delete_bill_button() {
-  const table_div = document.querySelector("#table-section");
+  const sidebar = document.querySelector(".sidebar");
 
   // Create the Delete Popup button
   const button = document.createElement("button");
   button.id = "delete-popup-btn";
   button.textContent = "Delete Bill";
-  button.style.padding = "5px";
+  button.style.width = "100%";
+  button.style.height = "35px";
+  button.style.marginTop = "5px";
 
-  table_div.appendChild(button);
+  sidebar.appendChild(button);
 
   // Create overlay (hidden initially)
   const overlay = document.createElement("div");
@@ -119,6 +119,7 @@ function delete_bill_button() {
   // Input field for y_m_bill_id
   const input = document.createElement("input");
   input.type = "number";
+  input.min = 0;
   input.placeholder = "Enter y_m_bill_id...";
 
   // Submit button
@@ -165,16 +166,18 @@ function delete_bill_button() {
 }
 
 function add_bill_button() {
-  const table_div = document.querySelector("#table-section");
+  const sidebar = document.querySelector(".sidebar");
 
   // Create the Open Popup button
   const button = document.createElement("button");
   button.id = "show-popup-btn";
   button.textContent = "add column";
-  button.style.marginRight = "25px";
-  button.style.marginBottom = "25px";
-  button.style.padding = "5px";
-  table_div.appendChild(button);
+  // Make button full width and set height
+  button.style.width = "100%";
+  button.style.height = "35px";
+  button.style.marginTop = "5px";
+
+  sidebar.appendChild(button);
 
   // Create overlay (hidden initially)
   const overlay = document.createElement("div");
@@ -233,6 +236,36 @@ function add_bill_button() {
 
   // Close popup if overlay is clicked
   overlay.addEventListener("click", () => closePopup(popup, overlay));
+}
+
+function add_sidebar_input() {
+  const sidebar = document.querySelector(".sidebar");
+
+  const h5_text = document.createElement("h5");
+  h5_text.textContent = "column widths";
+  h5_text.style.color = "#ADD8E6"; // light blue hex
+  h5_text.style.marginTop = "18px";
+  sidebar.appendChild(h5_text);
+
+  // Create a numeric input
+  const numberInput = document.createElement("input");
+  numberInput.type = "number";
+  numberInput.id = "global-number-input"; // for global access
+  numberInput.min = 0;
+  numberInput.max = 15;
+  numberInput.value = 0; // default value
+  numberInput.style.width = "100%"; // full width of sidebar
+  numberInput.style.marginTop = "5px";
+  numberInput.style.padding = "5px";
+
+  // Load saved value (if exists)
+  const savedValue = localStorage.getItem("selectedNumber");
+  if (savedValue !== null) {
+    numberInput.value = savedValue;
+    numberInput.selectedNumber = parseInt(savedValue, 10);
+  }
+
+  sidebar.appendChild(numberInput);
 }
 
 /**
@@ -295,9 +328,20 @@ function example_popup() {
 
 // Function to calculate column width based on table_div width
 function calculate_col_width(header_quantity) {
+  const slider_val = document.getElementById("global-number-input").value;
+
   const row_header_width = 120;
   const table_div = document.querySelector("#table-section");
-  const col_width =
-    (table_div.offsetWidth - row_header_width) / header_quantity;
-  return col_width;
+  let dividend = table_div.offsetWidth - row_header_width;
+  let divisor = header_quantity + parseInt(slider_val, 10);
+  const col_width = dividend / divisor;
+
+  // center the HoT
+  let container_width = table_div.offsetWidth;
+  let HoT_width = (col_width * header_quantity) + row_header_width;
+  // make padding always round down. human eye can't see the difference, and it stop horizontal scrollbar from showing
+  let t_padding = Math.floor((container_width - HoT_width) / 2);
+  let t_pad_text = t_padding + "px";
+
+  return { col_width, t_pad_text };
 }

@@ -29,7 +29,11 @@ function create_table_example() {
 
   // create year title
   const heading = document.createElement("h1");
-  heading.textContent = current_year;
+  heading.textContent = current_year; // your title text
+  heading.style.textAlign = "center"; // center the text
+  heading.style.marginBottom = "20px"; // spacing below the heading
+  heading.style.fontFamily = "Arial, sans-serif";
+  heading.style.fontWeight = "600";
   table_div.appendChild(heading);
 
   // dummy data array for the example table
@@ -50,6 +54,11 @@ function create_table_example() {
   const formattedData = data.map((row) =>
     row.map((cell) => (cell !== null ? cell + " €" : null))
   );
+
+  hot_dimensions = calculate_col_width(3);
+  table_div.style.paddingLeft = hot_dimensions.t_pad_text;
+  table_div.style.paddingRight = hot_dimensions.t_pad_text;
+
   // create table
   const hot = new Handsontable(table_div, {
     themeName: "ht-theme-main-dark-auto",
@@ -64,6 +73,30 @@ function create_table_example() {
     licenseKey: "non-commercial-and-evaluation",
   });
   hot.addHook("afterSelection", example_popup);
+
+  window.addEventListener("resize", () => {
+    const hot_dimensions = calculate_col_width(3);
+    hot.updateSettings({
+      colWidths: hot_dimensions.col_width,
+    });
+    table_div.style.paddingLeft = hot_dimensions.t_pad_text;
+    table_div.style.paddingRight = hot_dimensions.t_pad_text;
+  });
+
+  const numberInput = document.getElementById("global-number-input");
+  // Listen for changes
+  numberInput.addEventListener("input", (event) => {
+    const hot_dimensions = calculate_col_width(3);
+    hot.updateSettings({
+      colWidths: hot_dimensions.col_width,
+    });
+    table_div.style.paddingLeft = hot_dimensions.t_pad_text;
+    table_div.style.paddingRight = hot_dimensions.t_pad_text;
+
+    // Save to localStorage
+    const newValue = parseInt(event.target.value, 10);
+    localStorage.setItem("selectedNumber", newValue);
+  });
 }
 
 async function table_write_new_value(bill_name, y_m_bill_id, amount) {
@@ -232,7 +265,9 @@ async function create_table_from_db(cells_data) {
     real_data[t_cell.t_month][t_cell.t_id] = data_cells.data[i].amount;
   }
 
-  col_width = calculate_col_width(data_headers.length);
+  hot_dimensions = calculate_col_width(data_headers.length);
+  table_div.style.paddingLeft = hot_dimensions.t_pad_text;
+  table_div.style.paddingRight = hot_dimensions.t_pad_text;
 
   const hot = new Handsontable(table_div, {
     themeName: "ht-theme-main-dark-auto",
@@ -241,7 +276,7 @@ async function create_table_from_db(cells_data) {
     rowHeaders: monthNames.reverse(),
     width: "100%",
     height: "auto",
-    colWidths: col_width,
+    colWidths: hot_dimensions.col_width,
     rowHeaderWidth: 120,
     licenseKey: "non-commercial-and-evaluation",
     columns: data_headers.map(() => ({
@@ -258,10 +293,27 @@ async function create_table_from_db(cells_data) {
   });
 
   window.addEventListener("resize", () => {
-    const t_width = calculate_col_width(data_headers.length);
+    const hot_dimensions = calculate_col_width(data_headers.length);
     hot.updateSettings({
-      colWidths: t_width,
+      colWidths: hot_dimensions.col_width,
     });
+    table_div.style.paddingLeft = hot_dimensions.t_pad_text;
+    table_div.style.paddingRight = hot_dimensions.t_pad_text;
+  });
+
+  const numberInput = document.getElementById("global-number-input");
+  // Listen for changes
+  numberInput.addEventListener("input", (event) => {
+    const hot_dimensions = calculate_col_width(data_headers.length);
+    hot.updateSettings({
+      colWidths: hot_dimensions.col_width,
+    });
+    table_div.style.paddingLeft = hot_dimensions.t_pad_text;
+    table_div.style.paddingRight = hot_dimensions.t_pad_text;
+
+    // Save to localStorage
+    const newValue = parseInt(event.target.value, 10);
+    localStorage.setItem("selectedNumber", newValue);
   });
 }
 
@@ -317,6 +369,8 @@ async function fake_main() {
   const db_has_data = await table_has_data();
   add_bill_button();
   delete_bill_button();
+  add_sidebar_input();
+
   if (db_has_data) {
     const cells_data = db_retrieve_data();
     create_table_from_db(cells_data);

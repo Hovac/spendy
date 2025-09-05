@@ -23,7 +23,7 @@ html {
 
 .top {
   grid-area: top;
-  background-color: #4caf50;
+  background-color: #3e84db;
   color: white;
   display: flex;
   align-items: center;
@@ -35,24 +35,20 @@ html {
   grid-area: sidebar;
   background-color: #f4f4f4;
   padding: 20px;
-  border-right: 1px solid #ddd;
+  text-align: center;
+  background-color: #394778;
 }
 
-.sidebar a {
-  display: block;
-  margin-bottom: 10px;
-  color: #333;
-  text-decoration: none;
+.sidebar h3 {
+  color: #d0d8e0;      /* replace with any color you like */
 }
 
-.sidebar a:hover {
-  text-decoration: underline;
-}
 
 .main {
   grid-area: main;
   padding: 20px;
   overflow-y: auto;
+  background-color: #8c96b7;
 }
 
 #popup-message {
