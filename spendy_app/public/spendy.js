@@ -58,16 +58,15 @@ function create_table_example() {
   hot_dimensions = calculate_col_width(3);
   table_div.style.paddingLeft = hot_dimensions.t_pad_text;
   table_div.style.paddingRight = hot_dimensions.t_pad_text;
-
   // create table
   const hot = new Handsontable(table_div, {
     themeName: "ht-theme-main-dark-auto",
     data: formattedData,
     colHeaders: ["electricity_example", "gas_example", "internet_example"],
-    rowHeaders: monthNames,
+    rowHeaders: monthNames.reverse(),
     width: "100%",
     height: "auto",
-    colWidths: 150,
+    colWidths: hot_dimensions.col_width,
     rowHeaderWidth: 120,
     readOnly: true,
     licenseKey: "non-commercial-and-evaluation",
