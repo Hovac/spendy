@@ -1,7 +1,7 @@
 async function save_bill_column(bill_name) {
   let data_col;
   try {
-    const response = await fetch("http://localhost:3000/get-columns");
+    const response = await fetch("/get-columns");
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -20,12 +20,12 @@ async function save_bill_column(bill_name) {
   console.log(emptyPos); // 0
 
   try {
-    const response = await fetch("http://localhost:3000/save-bill", {
+    const response = await fetch("/save-bill", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         textField: bill_name,
-        y_m_bill_id: Number(emptyPos)
+        y_m_bill_id: Number(emptyPos),
       }),
     });
     const data = await response.json();
@@ -34,6 +34,66 @@ async function save_bill_column(bill_name) {
   } catch (error) {
     console.error("Error sending data:", error);
   }
+}
+
+async function getBillName(y_m_bill_id) {
+  try {
+    const response = await fetch(`/get-bill-name?y_m_bill_id=${y_m_bill_id}`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || "Unknown error");
+    }
+
+    return data.bill_name;
+  } catch (error) {
+    console.error("Error fetching bill name:", error);
+    return null; // or handle it differently
+  }
+}
+
+async function delete_bill_column(col_id) {
+  const billId = parseInt(col_id, 10);
+  if (isNaN(billId)) {
+    alert("Please enter a valid number.");
+    return;
+  }
+
+  let bill_name = await getBillName(billId);
+
+  console.log(bill_name);
+
+  try {
+    const response = await fetch("/delete-bill", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bill_name: bill_name }),
+    });
+
+    const result = await response.json();
+    if (result.success) {
+    } else {
+      alert(`Error: ${result.error}`);
+    }
+    location.reload();
+  } catch (err) {
+    console.error("Delete request failed:", err);
+    alert("Request failed, check console.");
+  }
+}
+
+function closePopup(popup, overlay) {
+  popup.classList.remove("show");
+  overlay.classList.remove("show");
+  setTimeout(() => {
+    popup.remove();
+    overlay.remove();
+  }, 300); // wait for fade-out animation
 }
 
 function delete_bill_button() {
@@ -65,43 +125,10 @@ function delete_bill_button() {
   const submitBtn = document.createElement("button");
   submitBtn.textContent = "Delete";
 
-  // Close popup function with fade-out
-  function closePopup() {
-    popup.classList.remove("show");
-    overlay.classList.remove("show");
-    setTimeout(() => {
-      popup.remove();
-      overlay.remove();
-    }, 300); // wait for fade-out animation
-  }
-
   // Submit event - triggers delete API
   async function submitDelete() {
-    const billId = parseInt(input.value, 10);
-    if (isNaN(billId)) {
-      alert("Please enter a valid number.");
-      return;
-    }
-
-    try {
-      const response = await fetch("http://localhost:3000/delete-bill", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ y_m_bill_id: billId }),
-      });
-
-      const result = await response.json();
-      if (result.success) {
-      } else {
-        alert(`Error: ${result.error}`);
-      }
-      location.reload();
-    } catch (err) {
-      console.error("Delete request failed:", err);
-      alert("Request failed, check console.");
-    }
-
-    closePopup();
+    delete_bill_column(input.value);
+    closePopup(popup, overlay);
   }
 
   submitBtn.addEventListener("click", submitDelete);
@@ -134,7 +161,7 @@ function delete_bill_button() {
   });
 
   // Close popup if overlay is clicked
-  overlay.addEventListener("click", closePopup);
+  overlay.addEventListener("click", () => closePopup(popup, overlay));
 }
 
 function add_bill_button() {
@@ -167,20 +194,10 @@ function add_bill_button() {
   const submitBtn = document.createElement("button");
   submitBtn.textContent = "Submit";
 
-  // Close popup function with fade-out
-  function closePopup() {
-    popup.classList.remove("show");
-    overlay.classList.remove("show");
-    setTimeout(() => {
-      popup.remove();
-      overlay.remove();
-    }, 300); // wait for fade-out to finish
-  }
-
   // Submit event
   function submitForm() {
     save_bill_column(input.value);
-    closePopup();
+    closePopup(popup, overlay);
   }
 
   submitBtn.addEventListener("click", submitForm);
@@ -215,7 +232,7 @@ function add_bill_button() {
   });
 
   // Close popup if overlay is clicked
-  overlay.addEventListener("click", closePopup);
+  overlay.addEventListener("click", () => closePopup(popup, overlay));
 }
 
 /**
@@ -274,4 +291,13 @@ function example_popup() {
       if (timeoutId) clearTimeout(timeoutId);
     }
   });
+}
+
+// Function to calculate column width based on table_div width
+function calculate_col_width(header_quantity) {
+  const row_header_width = 120;
+  const table_div = document.querySelector("#table-section");
+  const col_width =
+    (table_div.offsetWidth - row_header_width) / header_quantity;
+  return col_width;
 }

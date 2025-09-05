@@ -68,7 +68,7 @@ function create_table_example() {
 
 async function table_write_new_value(bill_name, y_m_bill_id, amount) {
   try {
-    const response = await fetch("http://localhost:3000/insert-bill", {
+    const response = await fetch("/insert-bill", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -91,7 +91,7 @@ async function table_write_new_value(bill_name, y_m_bill_id, amount) {
 
 async function table_change_value(bill_id, new_value) {
   try {
-    const response = await fetch("http://localhost:3000/update-bill-amount", {
+    const response = await fetch("/update-bill-amount", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -113,7 +113,7 @@ async function table_change_value(bill_id, new_value) {
 
 async function table_delete_value(y_m_bill_id) {
   try {
-    const response = await fetch("/delete-bill", {
+    const response = await fetch("/delete-cell", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -188,7 +188,7 @@ async function create_table_from_db(cells_data) {
   let data_cells;
 
   try {
-    const response = await fetch("http://localhost:3000/get-columns");
+    const response = await fetch("/get-columns");
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -198,7 +198,7 @@ async function create_table_from_db(cells_data) {
   }
 
   try {
-    const response = await fetch("http://localhost:3000/get-cells_data");
+    const response = await fetch("/get-cells_data");
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -232,6 +232,8 @@ async function create_table_from_db(cells_data) {
     real_data[t_cell.t_month][t_cell.t_id] = data_cells.data[i].amount;
   }
 
+  col_width = calculate_col_width(data_headers.length);
+
   const hot = new Handsontable(table_div, {
     themeName: "ht-theme-main-dark-auto",
     data: real_data,
@@ -239,7 +241,7 @@ async function create_table_from_db(cells_data) {
     rowHeaders: monthNames.reverse(),
     width: "100%",
     height: "auto",
-    colWidths: 150,
+    colWidths: col_width,
     rowHeaderWidth: 120,
     licenseKey: "non-commercial-and-evaluation",
     columns: data_headers.map(() => ({
@@ -253,6 +255,13 @@ async function create_table_from_db(cells_data) {
 
   hot.addHook("afterChange", (cell) => {
     cell_modifier(cell, heading.textContent, hot.getColHeader());
+  });
+
+  window.addEventListener("resize", () => {
+    const t_width = calculate_col_width(data_headers.length);
+    hot.updateSettings({
+      colWidths: t_width,
+    });
   });
 }
 
@@ -268,7 +277,7 @@ async function db_retrieve_data() {
   // store data headers first
   let data_headers;
   try {
-    const response = await fetch("http://localhost:3000/get-columns");
+    const response = await fetch("/get-columns");
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -290,7 +299,7 @@ async function db_retrieve_data() {
   // store data belonging to these headers. if no data is found, fill current year with 12 months of nulls
   let tmp_data;
   try {
-    const response = await fetch("http://localhost:3000/get-cells_data");
+    const response = await fetch("/get-cells_data");
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
